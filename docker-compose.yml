@@ -4,7 +4,7 @@ services:
 
   chat_exporter:
     image: tyrrrz/discordchatexporter:stable
-    restart: unless-stopped
+    restart: "no"
     env_file:
       - .env
     environment:
