@@ -6,4 +6,6 @@ def runValenceOnFolder(path):
 
 
 if __name__ == '__main__':
-    print(getValence("armastama"))
+    res = getValence("saab selle kuidagi ära fiksida? ütleks tudengitele, et nad ootaks veits testib kogu kategooria ülle")
+    print("---")
+    print(res)

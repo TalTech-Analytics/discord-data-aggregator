@@ -1,4 +1,4 @@
-version: '3.4'
+version: '3.8'
 
 services:
 
@@ -9,7 +9,7 @@ services:
         build:
             context: .
             dockerfile: Dockerfile-estnltk
-        entrypoint: [ "/bin/bash" ]
+        entrypoint: "python3 valence.py"
         volumes:
             - "./input/:/host/input/"
             - "./output/:/host/output/"

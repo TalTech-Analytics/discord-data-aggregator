@@ -9,7 +9,7 @@ from nltk.classify import NaiveBayesClassifier
 space = re.compile('[\'".,!?\\s\\(\\)]+')
 cats = ('positiivne', 'negatiivne', 'neutraalne', 'vastuoluline')
 classifier = None
-corpus_name = pkg_resources.resource_filename("valence", "korpus.csv")
+corpus_name = pkg_resources.resource_filename("valence", "estonianvalence.csv")
 
 
 def load_corpus(corpus_name=corpus_name):
@@ -18,10 +18,10 @@ def load_corpus(corpus_name=corpus_name):
     with codecs.open(corpus_name, 'r', encoding='utf-8') as f:
         # for line in f: print line
         for line in f:
-            row = line.split(',', 1)
-            words = space.split(row[1])
+            row = line.split(',', 4)
+            words = space.split(row[4])
             feats = dict([(word, True) for word in words])
-            features.append((feats, row[0]))
+            features.append((feats, row[3]))
     return features
 
 

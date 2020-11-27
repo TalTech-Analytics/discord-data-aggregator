@@ -7,3 +7,6 @@ input/*
 !input/.gitkeep
 output/*
 !output/.gitkeep
+data
+!data/.gitkeep
+__pycache__

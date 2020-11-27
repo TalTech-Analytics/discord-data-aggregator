@@ -5,6 +5,7 @@ from optparse import OptionParser
 
 corpus_name = None
 
+
 def doit(fi, fo):
     get_classifier(corpus_name)
     if classifier:

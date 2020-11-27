@@ -1,8 +1,14 @@
-FROM continuumio/anaconda3
+FROM continuumio/anaconda3:2020.07
 
 WORKDIR /host/app
 
 RUN conda create -n estnltk python=3.5 anaconda
-RUN conda activate estnltk
 
-ENTRYPOINT ["/bin/bash"]
+# Make RUN commands use the new environment:
+SHELL ["conda", "run", "-n", "estnltk", "/bin/bash", "-c"]
+
+RUN conda install -c estnltk -c conda-forge estnltk
+
+RUN conda env list
+
+ENTRYPOINT "python3"
