@@ -3,3 +3,7 @@
 venv
 *.iml
 .ipynb_checkpoints
+input/*
+!input/.gitkeep
+output/*
+!output/.gitkeep

@@ -1,0 +1,8 @@
+FROM continuumio/anaconda3
+
+WORKDIR /host/app
+
+RUN conda create -n estnltk python=3.5 anaconda
+RUN conda activate estnltk
+
+ENTRYPOINT ["/bin/bash"]
