@@ -1,0 +1,10 @@
+version: '3.4'
+
+services:
+
+    guilds_fetcher:
+        image: tyrrrz/discordchatexporter:stable
+        restart: "no"
+        env_file:
+            - ../.env
+        entrypoint: [ "dotnet", "/app/DiscordChatExporter.Cli.dll", "guilds" ]

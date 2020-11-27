@@ -1,0 +1,54 @@
+#variables:
+#    DOCKER_DRIVER: overlay
+#
+#stages:
+#    - test
+#    - build
+#    - deploy
+#
+#build_valence_analyzer:
+#    tags:
+#        - dev
+#        - master
+#    image: docker:latest
+#    stage: build
+#    services:
+#        -   name: docker:dind
+#    before_script:
+#        - docker container ls
+#        - docker images
+#    script:
+#        - docker-compose -f valence/docker-compose-build-valence.yml up --no-start --build --force-recreate --no-deps
+#        - docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
+#        - docker tag valence $DOCKER_USER/valence-analyzer:latest
+#        - docker push $DOCKER_USER/valence-analyzer:latest
+#    after_script:
+#        - docker-compose -f valence/docker-compose-build-valence.yml down --remove-orphans -v -f
+#        - docker container ls
+#        - docker images
+#    only:
+#        - dev
+#        - master
+#
+#deploy_valence_analyzer:
+#  tags:
+#    - dev
+#    - master
+#  image: $DOCKER_USER/valence-analyzer:latest
+#  stage: deploy
+#  services:
+#    - name: docker:dind
+#  before_script:
+#    - docker images
+#    - docker container ls
+#    - docker-compose -f valence/docker-compose-valence.yml down --remove-orphans -v -f || true
+#  script:
+#    - docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
+#    - docker pull automatedtestingservice/valence-analyzer:latest
+#    - docker-compose -f docker-compose-valence.yml up -d --force-recreate --no-deps
+#  after_script:
+#    - docker container ls
+#    - docker images
+#  only:
+#    - dev
+#    - master

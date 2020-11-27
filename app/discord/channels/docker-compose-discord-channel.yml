@@ -1,0 +1,14 @@
+version: '3.4'
+
+services:
+
+    chat_exporter:
+        image: tyrrrz/discordchatexporter:stable
+        restart: "no"
+        env_file:
+            - ../.env
+        environment:
+            GUILDID: 742745493570060302
+        entrypoint: [ "dotnet", "/app/DiscordChatExporter.Cli.dll", "export", "--channel", "742745494039822399", "-f", "Json" ]
+        volumes:
+            - "./data/discord/:/app/out"
