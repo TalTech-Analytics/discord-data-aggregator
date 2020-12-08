@@ -3,10 +3,10 @@ version: '3.4'
 services:
 
     mining:
-        image: envomp/student-data-analyzer
-        container_name: student-data-analyzer
+        image: envomp/discord-data-aggregator
+        container_name: discord-data-aggregator
         ports:
             - "8888:8888"
         volumes:
-            - "./app/:/analyzer/app/" # For developing
+            - "./:/analyzer/app/" # For developing
 #            - "/analyzer/valence-output/:analyzer/input/"

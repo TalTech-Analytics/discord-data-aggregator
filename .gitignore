@@ -1,12 +1,5 @@
 .idea
-app/discord/.env
 venv
 *.iml
 .ipynb_checkpoints
-app/discord/input/*
-!app/discord/input/.gitkeep
-app/discord/output/*
-!app/discord/output/.gitkeep
-data
-!data/.gitkeep
 __pycache__
