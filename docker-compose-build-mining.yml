@@ -5,6 +5,9 @@ services:
     mining:
         image: envomp/student-data-analyzer
         container_name: student-data-analyzer
+        build:
+            context: .
+            dockerfile: Dockerfile-mining
         ports:
             - "8888:8888"
         volumes:
