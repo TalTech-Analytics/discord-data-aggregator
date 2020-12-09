@@ -20,4 +20,6 @@ RUN conda env list
 
 RUN ipython kernel install --name estnltk --user
 
-ENTRYPOINT ["jupyter", "-u", "--allow-root", "--no-browser", "--notebook-dir=/analyzer/app", "--ip=0.0.0.0", "--NotebookApp.password=''", "--NotebookApp.allow_origin='*'", "notebook"]
+RUN python -m nltk.downloader all
+
+ENTRYPOINT ["jupyter", "-u", "--allow-root", "--no-browser", "--notebook-dir=/analyzer/app", "--ip=0.0.0.0", "--NotebookApp.token=''", "--NotebookApp.password=''", "--NotebookApp.allow_origin='*'", "notebook"]
