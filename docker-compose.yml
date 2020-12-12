@@ -6,7 +6,7 @@ services:
         image: envomp/discord-data-aggregator
         container_name: discord-data-aggregator
         ports:
-            - "8888:8888"
+            - "8881:8888"
         volumes:
             - "./:/analyzer/app/" # For developing
-#            - "/analyzer/valence-output/:analyzer/input/"
+            - "/analyzer/valence-output/:/analyzer/input/"
