@@ -1,10 +1,11 @@
-from abc import ABC, ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
 
 
 class Configuration:
     __metaclass__ = ABCMeta
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def name(self):
         return "generic"
 

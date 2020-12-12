@@ -15,7 +15,8 @@ class CountConfiguration(Configuration, ABC):
     def name(self):
         return "count"
 
-    def all_words_has_content(self, words: Text):
+    @staticmethod
+    def all_words_has_content(words: Text):
         return all(set(word.partofspeech[0][0]) & {'A', 'C', 'U', 'V', 'S'} for word in words)
 
     def get_datasets(self, matrixes, filter_function=None):
