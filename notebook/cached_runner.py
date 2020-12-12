@@ -4,7 +4,7 @@ from configuration import Configuration
 
 
 class CachedRunner:
-    def __init__(self, config: Configuration):
+    def __init__(self, config):
         """directory: all files in given folder and subfolder will be used."""
         self.config = config
         self.data_dir = "/analyzer/input"
@@ -69,7 +69,7 @@ class CachedRunner:
             guild_name = guild["name"]
             for channel in self.get_channels_in_guild(guild):
                 channel_name = channel["name"]
-                grouping, _ = [x.strip() for x in channel_name.split("/")]
+                grouping = (channel_name.split("/")[0]).strip()
                 grouping = guild_name + " " + grouping
                 channel = self.get_channel(guild, channel)
                 if not matrix.get(grouping):
@@ -83,7 +83,7 @@ class CachedRunner:
             guild_name = guild["name"]
             for channel in self.get_channels_in_guild(guild):
                 channel_name = channel["name"]
-                grouping, _ = [x.strip() for x in channel_name.split("/")]
+                grouping = (channel_name.split("/")[0]).strip()
                 channel = self.get_channel(guild, channel)
                 if not matrix.get(grouping):
                     matrix[grouping] = []
@@ -104,8 +104,7 @@ class CachedRunner:
     def get_channels_in_guild(self, guild):
         try:
             channels_file = open(
-                os.path.join(self.data_out, str(guild["id"]), self.config.name + "_cache_channels.json"),
-                "r")
+                os.path.join(self.data_out, str(guild["id"]), self.config.name + "_cache_channels.json"), "r")
             channels = json.load(channels_file)
             channels_file.close()
             return channels["channels"]
