@@ -5,12 +5,12 @@ from collections import Counter
 from collections import deque
 from configuration import Configuration
 import pandas as pd
+import html
+import re
+
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
-from IPython.display import display
-import html
-import re
 
 
 class CountConfiguration(Configuration, ABC):
@@ -19,7 +19,8 @@ class CountConfiguration(Configuration, ABC):
     def name(self):
         return "count"
 
-    def all_words_has_content(self, words):
+    @staticmethod
+    def all_words_has_content(words):
         return all(set(word.partofspeech[0][0]) & {'A', 'C', 'U', 'V', 'S'} for word in words)
 
     def get_datasets(self, matrixes, filter_function=None):
@@ -91,7 +92,7 @@ class CountConfiguration(Configuration, ABC):
         }
 
     def apply(self, layer, message):
-        timestamp = re.sub(r"(\.\d+)?[\+\-]\d+:\d+", "", message["timestamp"])
+        timestamp = re.sub(r"(\.\d+)?[+\-]\d+:\d+", "", message["timestamp"])
         new_time = datetime.strptime(''.join(timestamp), '%Y-%m-%dT%H:%M:%S').timestamp()
         if new_time > layer["last_timestamp"]:
             layer["last_timestamp"] = new_time

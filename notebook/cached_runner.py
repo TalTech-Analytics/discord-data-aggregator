@@ -1,6 +1,5 @@
-import os
 import json
-from configuration import Configuration
+import os
 
 
 class CachedRunner:
@@ -38,21 +37,20 @@ class CachedRunner:
             reduced_matrixes.append((name, reduced_matrix))
         return reduced_matrixes
 
-    ### MATRIXES
+    # MATRIXES
     # Matrixes must have the type of Map<grouping, List<Tuple<name, Configuration.empty>>>
 
     def get_combined_matrix(self):
         matrix = dict()
         row = []
         for guild in self.get_guilds():
-            guild_name = guild["name"]
             for channel in self.get_channels_in_guild(guild):
                 channel_name = channel["name"]
                 channel = self.get_channel(guild, channel)
                 row.append((channel_name, channel))
         matrix["all"] = row
         return matrix
-    
+
     def get_year_matrix(self):
         matrix = dict()
         for guild in self.get_guilds():
@@ -68,7 +66,6 @@ class CachedRunner:
     def get_flattened_matrix(self):
         matrix = dict()
         for guild in self.get_guilds():
-            guild_name = guild["name"]
             for channel in self.get_channels_in_guild(guild):
                 channel_name = channel["name"]
                 channel = self.get_channel(guild, channel)
@@ -92,7 +89,6 @@ class CachedRunner:
     def get_category_matrix(self):
         matrix = dict()
         for guild in self.get_guilds():
-            guild_name = guild["name"]
             for channel in self.get_channels_in_guild(guild):
                 channel_name = channel["name"]
                 grouping = (channel_name.split("/")[0]).strip()
@@ -102,7 +98,7 @@ class CachedRunner:
                 matrix[grouping].append((channel_name, channel))
         return matrix
 
-    ### FILE GETTERS
+    # FILE GETTERS
 
     def get_guilds(self):
         try:
@@ -120,7 +116,7 @@ class CachedRunner:
             channels = json.load(channels_file)
             channels_file.close()
             return channels["channels"]
-        except Exception as e:
+        except Exception:
             return []
 
     def get_channel(self, guild, channel):
@@ -131,10 +127,10 @@ class CachedRunner:
             channel = self.config.deserialize(json.load(channel_file))
             channel_file.close()
             return channel
-        except Exception as e:
+        except Exception:
             return self.config.get_empty()
 
-    ### UPDATE CACHE
+    # UPDATE CACHE
 
     def invoke(self, directory="/analyzer/input", clean=False):
         """
