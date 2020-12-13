@@ -32,6 +32,8 @@ class CountConfiguration(Configuration, ABC):
             count_table = pd.DataFrame(columns=["group", "group_members", "in_a_row"] + sum(
                 [["count_" + str(x), "repetitions_" + str(x)] for x in range(10)], []))
             for group_name, (group_members, matrix) in matrix_groupings:
+                print("With group: " + group_name)
+                print("With elements: " + str(group_members))
                 for i in range(1, 5):
                     top_10 = []
                     for elem in matrix["counter_" + str(i)].most_common(10000):
@@ -41,8 +43,8 @@ class CountConfiguration(Configuration, ABC):
                             if len(top_10) == 10:
                                 break
                     add = dict()
-                    add["group"] = grouping
-                    add["group_members"] = group_members
+                    add["group"] = group_name
+                    add["group_members"] = str(group_members)
                     add["in_a_row"] = i
                     for x in range(10):
                         try:
@@ -53,10 +55,9 @@ class CountConfiguration(Configuration, ABC):
 
                     try:
                         count_table = count_table.append(pd.DataFrame(add), sort=False)
-                    except Exception:
+                    except Exception as e:
                         pass  # Empty row
             datasets.append(count_table)
-            display(count_table)
 
         return datasets
 

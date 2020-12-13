@@ -18,7 +18,7 @@ class CachedRunner:
     def get_reduced_matrixes(self):
         reduced_matrixes = []
         for name, matrix in [
-            # TODO: all together
+            ("All", self.get_combined_matrix()),
             ("Year", self.get_year_matrix()),
             ("Year category", self.get_year_category_matrix()),
             ("Flat", self.get_flattened_matrix()),
@@ -41,6 +41,18 @@ class CachedRunner:
     ### MATRIXES
     # Matrixes must have the type of Map<grouping, List<Tuple<name, Configuration.empty>>>
 
+    def get_combined_matrix(self):
+        matrix = dict()
+        row = []
+        for guild in self.get_guilds():
+            guild_name = guild["name"]
+            for channel in self.get_channels_in_guild(guild):
+                channel_name = channel["name"]
+                channel = self.get_channel(guild, channel)
+                row.append((channel_name, channel))
+        matrix["all"] = row
+        return matrix
+    
     def get_year_matrix(self):
         matrix = dict()
         for guild in self.get_guilds():
