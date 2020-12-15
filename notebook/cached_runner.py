@@ -10,9 +10,19 @@ class CachedRunner:
         self.data_out = "/analyzer/tmp"
 
     def get_datasets(self, fresh=False, filter_function=None):
-        self.invoke(clean=fresh)
-        matrixes = self.get_reduced_matrixes()
-        return self.config.get_datasets(matrixes, filter_function=filter_function)
+        global cached_runner_matrixes
+        if not fresh:
+            print("Using cache in RAM")
+            try:
+                cached_runner_matrixes
+            except NameError:
+                self.invoke(clean=fresh)
+                cached_runner_matrixes = self.get_reduced_matrixes()
+        else:
+            print("Recreating cache in RAM from permanent storage cache")
+            self.invoke(clean=fresh)
+            cached_runner_matrixes = self.get_reduced_matrixes()
+        return self.config.get_datasets(cached_runner_matrixes, filter_function=filter_function)
 
     def get_reduced_matrixes(self):
         reduced_matrixes = []
@@ -78,7 +88,7 @@ class CachedRunner:
             guild_name = guild["name"]
             for channel in self.get_channels_in_guild(guild):
                 channel_name = channel["name"]
-                grouping = (channel_name.split("/")[0]).strip()
+                grouping = (channel_name.split("/")[0]).strip().lower()
                 grouping = guild_name + " " + grouping
                 channel = self.get_channel(guild, channel)
                 if not matrix.get(grouping):
@@ -91,7 +101,7 @@ class CachedRunner:
         for guild in self.get_guilds():
             for channel in self.get_channels_in_guild(guild):
                 channel_name = channel["name"]
-                grouping = (channel_name.split("/")[0]).strip()
+                grouping = (channel_name.split("/")[0]).strip().lower()
                 channel = self.get_channel(guild, channel)
                 if not matrix.get(grouping):
                     matrix[grouping] = []
@@ -102,7 +112,7 @@ class CachedRunner:
 
     def get_guilds(self):
         try:
-            guilds_file = open(os.path.join(self.data_out, self.config.name + "_cache_guilds.json"), "r")
+            guilds_file = open(os.path.join(self.data_dir, "guilds.json"), "r")
             guilds = json.load(guilds_file)
             guilds_file.close()
             return guilds["guilds"]
@@ -111,8 +121,7 @@ class CachedRunner:
 
     def get_channels_in_guild(self, guild):
         try:
-            channels_file = open(
-                os.path.join(self.data_out, str(guild["id"]), self.config.name + "_cache_channels.json"), "r")
+            channels_file = open(os.path.join(self.data_dir, str(guild["id"]), "channels.json"), "r")
             channels = json.load(channels_file)
             channels_file.close()
             return channels["channels"]
@@ -121,8 +130,7 @@ class CachedRunner:
 
     def get_channel(self, guild, channel):
         try:
-            channel_path = os.path.join(self.data_out, str(guild["id"]), str(channel["id"]),
-                                        self.config.name + "_cache_channel.json")
+            channel_path = os.path.join(self.data_out, str(guild["id"]), str(channel["id"]), self.config.name + "_cache_channel.json")
             channel_file = open(channel_path, "r")
             channel = self.config.deserialize(json.load(channel_file))
             channel_file.close()
@@ -150,18 +158,23 @@ class CachedRunner:
 
         for f in os.listdir(directory):
             cache_file_prefix = self.config.name + "_cache_"
-            cache_location = os.path.join(directory.replace(self.data_dir, self.data_out), cache_file_prefix + f)
             cur_path = os.path.join(directory, f)
 
             if not os.path.isfile(cur_path):
                 self.invoke(cur_path)
 
             else:
+                if "channel.json" not in cur_path:
+                    print("skipping: " + cur_path)
+                    return
+                
+                cache_location = os.path.join(directory.replace(self.data_dir, self.data_out), cache_file_prefix + f)
                 print("processing: " + cur_path + " cache: " + cache_location)
                 os.makedirs(os.path.dirname(cache_location), exist_ok=True)
 
                 # Create empty cache if needed
                 if not os.path.isfile(cache_location) or clean:
+                    os.remove(cache_location)
                     cache = open(cache_location, "w")
                     json.dump(self.config.serialize(self.config.get_empty()), cache)
                     cache.close()
@@ -172,11 +185,12 @@ class CachedRunner:
                     cache = open(cache_location, "r")
                     cur_layer = self.config.deserialize(json.load(cache))
                     cache.close()
-                except Exception:
+                except Exception as error:
+                    print("Failed reading: " + str(error))
                     # Delete and create a new one
                     os.remove(cache_location)
                     cache = open(cache_location, "w")
-                    json.dump(self.config.serialize(cur_layer), cache)
+                    json.dump(self.config.serialize(self.config.get_empty()), cache)
                     cache.close()
 
                 # Update cache
@@ -185,7 +199,10 @@ class CachedRunner:
 
                 try:
                     for message in raw_json["messages"]:
-                        self.config.apply(cur_layer, message)
+                        try:
+                            self.config.apply(cur_layer, message)
+                        except Exception as error:
+                            print("error invoking: " + str(error))
 
                     discord_data.close()
 
@@ -193,7 +210,8 @@ class CachedRunner:
                     cache = open(cache_location, "w")
                     json.dump(self.config.serialize(cur_layer), cache)
                     cache.close()
-                except Exception:
+                except Exception as error:
+                    print("Failed updating: " + str(error))
                     # Save initial version
                     cache = open(cache_location, "w")
                     json.dump(raw_json, cache)
