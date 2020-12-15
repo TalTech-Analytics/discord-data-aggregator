@@ -11,18 +11,26 @@ class CachedRunner:
 
     def get_datasets(self, fresh=False, filter_function=None):
         global cached_runner_matrixes
+        
         if not fresh:
             print("Using cache in RAM")
             try:
                 cached_runner_matrixes
-            except NameError:
+            except Exception:
+                cached_runner_matrixes = dict()
+
+            try:
+                cached_runner_matrixes[self.config.name]
+            except Exception:
                 self.invoke(clean=fresh)
-                cached_runner_matrixes = self.get_reduced_matrixes()
+                cached_runner_matrixes[self.config.name] = self.get_reduced_matrixes()
         else:
             print("Recreating cache in RAM from permanent storage cache")
+            cached_runner_matrixes = dict()
             self.invoke(clean=fresh)
-            cached_runner_matrixes = self.get_reduced_matrixes()
-        return self.config.get_datasets(cached_runner_matrixes, filter_function=filter_function)
+            cached_runner_matrixes[self.config.name] = self.get_reduced_matrixes()
+
+        return self.config.get_datasets(cached_runner_matrixes[self.config.name], filter_function=filter_function)
 
     def get_reduced_matrixes(self):
         reduced_matrixes = []
@@ -174,7 +182,8 @@ class CachedRunner:
 
                 # Create empty cache if needed
                 if not os.path.isfile(cache_location) or clean:
-                    os.remove(cache_location)
+                    if os.path.exists(cache_location):
+                        os.remove(cache_location)
                     cache = open(cache_location, "w")
                     json.dump(self.config.serialize(self.config.get_empty()), cache)
                     cache.close()

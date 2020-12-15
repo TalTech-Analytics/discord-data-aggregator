@@ -68,7 +68,7 @@ class CountConfiguration(Configuration, ABC):
                             add[key] = matrix[key]
 
                     try:
-                        count_table = count_table.append(pd.DataFrame(add), sort=False)
+                        count_table = count_table.append(pd.DataFrame(add, index=[0]), ignore_index=True, sort=False)
                     except Exception as e:
                         pass  # Empty row
             datasets.append(count_table)
