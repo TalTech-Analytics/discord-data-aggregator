@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 
 
 class CachedRunner:
@@ -7,11 +8,11 @@ class CachedRunner:
         """directory: all files in given folder and subfolder will be used."""
         self.config = config
         self.data_dir = "/analyzer/input"
-        self.data_out = "/analyzer/tmp"
+        self.data_tmp = "/analyzer/tmp"
 
     def get_datasets(self, fresh=False, filter_function=None):
         global cached_runner_matrixes
-        
+
         if not fresh:
             print("Using cache in RAM")
             try:
@@ -26,6 +27,8 @@ class CachedRunner:
                 cached_runner_matrixes[self.config.name] = self.get_reduced_matrixes()
         else:
             print("Recreating cache in RAM from permanent storage cache")
+            shutil.rmtree(self.data_tmp)
+            os.mkdir(self.data_tmp)
             cached_runner_matrixes = dict()
             self.invoke(clean=fresh)
             cached_runner_matrixes[self.config.name] = self.get_reduced_matrixes()
@@ -47,7 +50,7 @@ class CachedRunner:
                 reduced_matrix_row = [[], self.config.get_empty()]
                 print("\n\nFound group: " + grouping, end=" with elements: ")
                 for group_name, group_value in group_values:
-                    print(group_name, end=" ")
+                    print(group_name, end="   ")
                     reduced_matrix_row[0].append(group_name)
                     reduced_matrix_row[1] = self.config.combine(reduced_matrix_row[1], group_value)
                 print("\n")
@@ -120,35 +123,36 @@ class CachedRunner:
 
     def get_guilds(self):
         try:
-            guilds_file = open(os.path.join(self.data_dir, "guilds.json"), "r")
-            guilds = json.load(guilds_file)
-            guilds_file.close()
-            return guilds["guilds"]
+            with open(os.path.join(self.data_dir, "guilds.json"), "r") as guilds_file:
+                guilds = json.load(guilds_file)
+                return guilds["guilds"]
         except Exception as e:
+            print("Failed fetching guilds:" + str(e))
             return []
 
     def get_channels_in_guild(self, guild):
         try:
-            channels_file = open(os.path.join(self.data_dir, str(guild["id"]), "channels.json"), "r")
-            channels = json.load(channels_file)
-            channels_file.close()
-            return channels["channels"]
-        except Exception:
+            with open(os.path.join(self.data_dir, str(guild["id"]), "channels.json"), "r") as channels_file:
+                channels = json.load(channels_file)
+                return channels["channels"]
+        except Exception as e:
+            print("Failed fetching channels:" + str(e))
             return []
 
     def get_channel(self, guild, channel):
         try:
-            channel_path = os.path.join(self.data_out, str(guild["id"]), str(channel["id"]), self.config.name + "_cache_channel.json")
-            channel_file = open(channel_path, "r")
-            channel = self.config.deserialize(json.load(channel_file))
-            channel_file.close()
-            return channel
-        except Exception:
+            channel_path = os.path.join(self.data_tmp, str(guild["id"]), str(channel["id"]),
+                                        self.config.name + "_cache_channel.json")
+            with open(channel_path, "r") as channel_file:
+                channel = self.config.deserialize(json.load(channel_file))
+                return channel
+        except Exception as e:
+            print("Failed fetching channel:" + str(e))
             return self.config.get_empty()
 
     # UPDATE CACHE
 
-    def invoke(self, directory="/analyzer/input", clean=False):
+    def invoke(self, clean=False):
         """
         Update cache or create one with given and return the results.
 
@@ -163,65 +167,68 @@ class CachedRunner:
         postcondition:
         a list of filled versions of default_structures are returned
         """
-
-        for f in os.listdir(directory):
-            cache_file_prefix = self.config.name + "_cache_"
-            cur_path = os.path.join(directory, f)
-
-            if not os.path.isfile(cur_path):
-                self.invoke(cur_path)
-
-            else:
-                if "channel.json" not in cur_path:
-                    print("skipping: " + cur_path)
-                    return
-                
-                cache_location = os.path.join(directory.replace(self.data_dir, self.data_out), cache_file_prefix + f)
-                print("processing: " + cur_path + " cache: " + cache_location)
+        for guild in self.get_guilds():
+            for channel in self.get_channels_in_guild(guild):
+                input_location = os.path.join(self.data_dir, str(guild["id"]), str(channel["id"]), "channel.json")
+                cache_location = os.path.join(self.data_tmp, str(guild["id"]), str(channel["id"]),
+                                              self.config.name + "_cache_channel.json")
+                print("processing: " + input_location + " cache: " + cache_location)
                 os.makedirs(os.path.dirname(cache_location), exist_ok=True)
+
+                if not os.path.isfile(input_location):
+                    print("skipping")
+                    continue
 
                 # Create empty cache if needed
                 if not os.path.isfile(cache_location) or clean:
-                    if os.path.exists(cache_location):
-                        os.remove(cache_location)
-                    cache = open(cache_location, "w")
-                    json.dump(self.config.serialize(self.config.get_empty()), cache)
-                    cache.close()
+                    self.create_empty(cache_location)
 
-                cur_layer = self.config.get_empty()
-                try:
-                    # Read current version
-                    cache = open(cache_location, "r")
-                    cur_layer = self.config.deserialize(json.load(cache))
-                    cache.close()
-                except Exception as error:
-                    print("Failed reading: " + str(error))
-                    # Delete and create a new one
-                    os.remove(cache_location)
-                    cache = open(cache_location, "w")
-                    json.dump(self.config.serialize(self.config.get_empty()), cache)
-                    cache.close()
+                cur_layer = self.get_current(cache_location)
 
-                # Update cache
-                discord_data = open(cur_path, "r")
-                raw_json = json.load(discord_data)
+                self.update_cache(cache_location, cur_layer, input_location)
 
-                try:
-                    for message in raw_json["messages"]:
-                        try:
-                            self.config.apply(cur_layer, message)
-                        except Exception as error:
-                            print("error invoking: " + str(error))
+    def update_cache(self, cache_location, cur_layer, input_location):
+        with open(input_location, "r") as discord_data:
+            raw_json = json.load(discord_data)
 
-                    discord_data.close()
-
-                    # Save updated version
-                    cache = open(cache_location, "w")
-                    json.dump(self.config.serialize(cur_layer), cache)
-                    cache.close()
-                except Exception as error:
-                    print("Failed updating: " + str(error))
-                    # Save initial version
-                    cache = open(cache_location, "w")
+            try:
+                self.update_messages(cache_location, cur_layer, discord_data, raw_json)
+            except Exception as error:
+                print("Failed updating: " + str(error))
+                # Save initial version
+                with open(cache_location, "w") as cache:
                     json.dump(raw_json, cache)
-                    cache.close()
+
+    def update_messages(self, cache_location, cur_layer, discord_data, raw_json):
+        for message in raw_json["messages"]:
+            try:
+                self.config.apply(cur_layer, message)
+            except Exception as error:
+                print("error invoking: " + str(error))
+        discord_data.close()
+
+        # Save updated version
+        with open(cache_location, "w") as cache:
+            json.dump(self.config.serialize(cur_layer), cache)
+
+    def get_current(self, cache_location):
+        cur_layer = self.config.get_empty()
+        try:
+            # Read current version
+            with open(cache_location, "r") as cache:
+                cur_layer = self.config.deserialize(json.load(cache))
+
+        except Exception as error:
+            print("Failed reading: " + str(error))
+            # Delete and create a new one
+            os.remove(cache_location)
+            with open(cache_location, "w") as cache:
+                json.dump(self.config.serialize(self.config.get_empty()), cache)
+        return cur_layer
+
+    def create_empty(self, cache_location):
+        print("emptying cache in: " + cache_location)
+        if os.path.exists(cache_location):
+            os.remove(cache_location)
+        with open(cache_location, "w") as cache:
+            json.dump(self.config.serialize(self.config.get_empty()), cache)

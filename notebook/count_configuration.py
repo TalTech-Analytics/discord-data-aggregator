@@ -21,11 +21,11 @@ class CountConfiguration(Configuration, ABC):
 
     @staticmethod
     def all_words_have_context(words):
-        return all(len(word["analysis"][0]['lemma']) > 2 and set(word["analysis"][0]['partofspeech']) & {'A', 'S', 'D', 'Y'} for word in words)
+        return all(len(word["analysis"][0]['lemma']) >= 4 and set(word["analysis"][0]['partofspeech']) & {'A', 'S', 'Y'} for word in words)
     
     @staticmethod
     def all_words_has_content(words):
-        return all(set(word["analysis"][0]['partofspeech']) & {'A', 'C', 'U', 'V', 'S', 'D', 'Y'} for word in words)
+        return all(len(word["analysis"][0]['lemma']) >= 3 and set(word["analysis"][0]['partofspeech']) & {'A', 'C', 'U', 'V', 'S', 'Y'} for word in words)
 
     def get_datasets(self, matrixes, filter_function=None):
         if filter_function is None:
@@ -43,6 +43,7 @@ class CountConfiguration(Configuration, ABC):
                 print("With elements: " + str(group_members))
                 for i in range(1, 5):
                     top_10 = []
+                    print("Items in: counter_" + str(i) + ": " + str(len(matrix["counter_" + str(i)])))
                     for elem in matrix["counter_" + str(i)].most_common(10000):
                         words = Text(elem[0]).tag("analysis").words
                         if filter_function(words):

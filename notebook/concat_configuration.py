@@ -29,6 +29,7 @@ class ConcatConfiguration(Configuration, ABC):
                 add["group"] = group_name
                 add["group_members"] = str(group_members)
                 add["text"] = " ".join(matrix["text"])
+                print("Data length: " + str(len(add["text"])))
                 count_table = count_table.append(pd.DataFrame(add, index=[0]), ignore_index=True, sort=False)
             datasets.append(count_table)
         return datasets
