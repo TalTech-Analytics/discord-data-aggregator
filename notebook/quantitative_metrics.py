@@ -11,14 +11,14 @@ class QuantitativeMetrics:
         for word in words:
             if set(word["analysis"][0]['partofspeech']) & set(['A', 'C', 'U', 'V', 'S']):
                 content_words += 1
-        return round(100 * content_words / len(words), 2)
+        return round(100 * content_words / max(len(words), 1), 2)
 
 
     # https://rdrr.io/github/trinker/formality/man/formality.html
     @staticmethod
     def get_formality(words):
-        f = 0
-        c = 0
+        f = 1
+        c = 1
         for word in words:
             if set(word["analysis"][0]['partofspeech']) & set(['S', 'A', 'C', 'U', 'K']):
                 f += 1
@@ -47,14 +47,14 @@ class QuantitativeMetrics:
     @staticmethod
     def get_fres(words, nr_of_sentences):
         syllables = sum([QuantitativeMetrics.count_syllables(x["analysis"][0]['root']) for x in words])
-        return round(206.835 - 1.015 * len(words) / nr_of_sentences - 84.6 * syllables / len(words), 2)
+        return round(206.835 - 1.015 * max(len(words), 1) / max(nr_of_sentences, 1) - 84.6 * syllables / max(len(words), 1), 2)
 
 
     # https://en.wikipedia.org/wiki/Gunning_fog_index
     @staticmethod
     def get_gunning_fog(words, nr_of_sentences):
         difficult_words = sum([max([QuantitativeMetrics.count_syllables(word) for word in x["analysis"][0]["root_tokens"]]) >= 3 for x in words])
-        return round(0.4 * len(words) / nr_of_sentences + 100 * difficult_words / len(words), 2)
+        return round(0.4 * max(len(words), 1) / max(nr_of_sentences, 1) + 100 * difficult_words / max(len(words), 1), 2)
 
 
     def analyze(self, df):
