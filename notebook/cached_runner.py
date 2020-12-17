@@ -88,9 +88,9 @@ class CachedRunner:
         matrix = dict()
         for guild in self.get_guilds():
             for channel in self.get_channels_in_guild(guild):
-                channel_name = channel["name"]
+                grouping = guild["name"] + " " + channel["name"]
                 channel = self.get_channel(guild, channel)
-                matrix[channel_name] = [(channel_name, channel)]
+                matrix[grouping] = [(grouping, channel)]
         return matrix
 
     def get_year_category_matrix(self):

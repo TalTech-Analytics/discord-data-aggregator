@@ -24,7 +24,7 @@ class TextRankAnalyzer:
                 self.add_keywords(add, row)
                 textrank_table = textrank_table.append(pd.DataFrame(add, index=[0]), ignore_index=True, sort=False)
 
-        return textrank_table
+        return textrank_table.sort_values(by='group')
 
     @staticmethod
     def add_summary(add, row):

@@ -72,7 +72,7 @@ class CountConfiguration(Configuration, ABC):
                         count_table = count_table.append(pd.DataFrame(add, index=[0]), ignore_index=True, sort=False)
                     except Exception as e:
                         pass  # Empty row
-            datasets.append(count_table)
+            datasets.append(count_table.sort_values(by='group'))
 
         return datasets
 

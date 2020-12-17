@@ -31,7 +31,7 @@ class ConcatConfiguration(Configuration, ABC):
                 add["text"] = " ".join(matrix["text"])
                 print("Data length: " + str(len(add["text"])))
                 count_table = count_table.append(pd.DataFrame(add, index=[0]), ignore_index=True, sort=False)
-            datasets.append(count_table)
+            datasets.append(count_table.sort_values(by='group'))
         return datasets
 
     def combine(self, first, second):
