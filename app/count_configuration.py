@@ -37,8 +37,7 @@ class CountConfiguration(Configuration, ABC):
         datasets = []
         for grouping, matrix_groupings in matrixes:
             print("Grouping: " + grouping + "\n\n")
-            headers = ["group", "group_members", "total_words", "in_a_row"]
-            headers += sum([["count_" + str(x), "repetitions_" + str(x)] for x in range(10)], [])
+            headers = ["group", "group_members", "total_words", "in_a_row", "rank", "item", "repetitions"]
             headers += sum(
                 [["valence_only_" + x, "valence_mostly_" + x] for x in ["negative", "neutral", "mixed", "positive"]],
                 [])
