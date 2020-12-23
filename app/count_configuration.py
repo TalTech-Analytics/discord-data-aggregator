@@ -1,12 +1,10 @@
 from abc import ABC
 from estnltk import Text
-from datetime import datetime
 from collections import Counter
 from collections import deque
 from configuration import Configuration
 import pandas as pd
 import html
-import re
 
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
@@ -92,7 +90,6 @@ class CountConfiguration(Configuration, ABC):
 
     def get_empty(self):
         return {
-            "last_timestamp": 0,
             "valence_only_negative": 0,
             "valence_only_neutral": 0,
             "valence_only_positive": 0,
@@ -109,33 +106,28 @@ class CountConfiguration(Configuration, ABC):
         }
 
     def apply(self, layer, message):
-        timestamp = re.sub(r"(\.\d+)?[+\-]\d+:\d+", "", message["timestamp"])
-        new_time = datetime.strptime(''.join(timestamp), '%Y-%m-%dT%H:%M:%S').timestamp()
-        if new_time > layer["last_timestamp"]:
-            new_words = 0
-            layer["last_timestamp"] = new_time
+        new_words = 0
+        parsed_text = Text(html.unescape(message["content"])).tag("analysis")
 
-            parsed_text = Text(html.unescape(message["content"])).tag("analysis")
+        deques = [
+            ("counter_1", deque(maxlen=1)),
+            ("counter_2", deque(maxlen=2)),
+            ("counter_3", deque(maxlen=3)),
+            ("counter_4", deque(maxlen=4))
+        ]
 
-            deques = [
-                ("counter_1", deque(maxlen=1)),
-                ("counter_2", deque(maxlen=2)),
-                ("counter_3", deque(maxlen=3)),
-                ("counter_4", deque(maxlen=4))
-            ]
+        for word in parsed_text.words:
+            new_words += 1
+            for key, q in deques:
+                lemma = word["analysis"][0]['lemma'].lower()
+                q.extend([lemma])
+                if q.maxlen == len(q):
+                    layer[key][" ".join(q)] += 1
 
-            for word in parsed_text.words:
-                new_words += 1
-                for key, q in deques:
-                    lemma = word["analysis"][0]['lemma'].lower()
-                    q.extend([lemma])
-                    if q.maxlen == len(q):
-                        layer[key][" ".join(q)] += 1
-            
-            layer["total_words"] += new_words
-            emotion = message["valence"].replace(" ", "_")
-            if emotion:
-                layer["valence_" + emotion] += new_words
+        layer["total_words"] += new_words
+        emotion = message["valence"].replace(" ", "_")
+        if emotion:
+            layer["valence_" + emotion] += new_words
 
     def serialize(self, layer):
         for i in range(1, 5):

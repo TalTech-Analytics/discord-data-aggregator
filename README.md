@@ -1,5 +1,9 @@
-## Discord aggregation service
+## Discord dev env
 
 Dockerized development environment
 
-Given service aggregates analyzed data
+## Discord data aggregator
+
+Given service aggregates tagged data
+
+

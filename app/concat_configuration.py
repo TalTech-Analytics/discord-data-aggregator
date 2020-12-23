@@ -1,14 +1,8 @@
 from abc import ABC
-from estnltk import Text
-from datetime import datetime
 from configuration import Configuration
 import pandas as pd
 import html
 import re
-
-pd.set_option('display.max_rows', 500)
-pd.set_option('display.max_columns', 500)
-pd.set_option('display.width', 1000)
 
 
 class ConcatConfiguration(Configuration, ABC):
@@ -41,19 +35,14 @@ class ConcatConfiguration(Configuration, ABC):
 
     def get_empty(self):
         return {
-            "last_timestamp": 0,
             "text": []
         }
 
     def apply(self, layer, message):
-        timestamp = re.sub(r"(\.\d+)?[+\-]\d+:\d+", "", message["timestamp"])
-        new_time = datetime.strptime(''.join(timestamp), '%Y-%m-%dT%H:%M:%S').timestamp()
-        if new_time > layer["last_timestamp"]:
-            layer["last_timestamp"] = new_time
-            parsed_text = html.unescape(message["content"])
-            if re.match(r"^.+\w$", parsed_text):
-                parsed_text += "."
-            layer["text"].append(parsed_text)
+        parsed_text = html.unescape(message["content"])
+        if re.match(r"^.+\w$", parsed_text):
+            parsed_text += "."
+        layer["text"].append(parsed_text)
 
     def serialize(self, layer):
         layer["text"] = " ".join(layer["text"])

@@ -3,10 +3,8 @@ version: '3.4'
 services:
 
     mining:
-        image: envomp/discord-data-aggregator
+        image: taltechanalytics/discord-data-aggregator
         container_name: discord-data-aggregator
-        ports:
-            - "8881:8888"
         volumes:
-            - "./:/analyzer/app/" # For developing
             - "/analyzer/valence-output/:/analyzer/input/"
+            - "/analyzer/aggregator-output/:/analyzer/output/"
