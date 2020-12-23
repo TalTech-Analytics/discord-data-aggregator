@@ -19,11 +19,16 @@ class CountConfiguration(Configuration, ABC):
 
     @staticmethod
     def all_words_have_context(words):
-        return all(len(word["analysis"][0]['lemma']) >= 4 and set(word["analysis"][0]['partofspeech']) & {'A', 'S', 'Y'} for word in words)
-    
+        return all(
+            len(word["analysis"][0]['lemma']) >= 4 and set(word["analysis"][0]['partofspeech']) & {'A', 'S', 'Y'} for
+            word in words)
+
     @staticmethod
     def all_words_has_content(words):
-        return all(len(word["analysis"][0]['lemma']) >= 3 and set(word["analysis"][0]['partofspeech']) & {'A', 'C', 'U', 'V', 'S', 'Y'} for word in words)
+        return all(
+            len(word["analysis"][0]['lemma']) >= 3 and set(word["analysis"][0]['partofspeech']) & {'A', 'C', 'U', 'V',
+                                                                                                   'S', 'Y'} for word in
+            words)
 
     def get_datasets(self, matrixes, filter_function=None):
         if filter_function is None:
@@ -34,58 +39,63 @@ class CountConfiguration(Configuration, ABC):
             print("Grouping: " + grouping + "\n\n")
             headers = ["group", "group_members", "total_words", "in_a_row"]
             headers += sum([["count_" + str(x), "repetitions_" + str(x)] for x in range(10)], [])
-            headers += sum([["valence_only_" + x, "valence_mostly_" + x] for x in ["negative", "neutral", "mixed", "positive"]], [])
+            headers += sum(
+                [["valence_only_" + x, "valence_mostly_" + x] for x in ["negative", "neutral", "mixed", "positive"]],
+                [])
             count_table = pd.DataFrame(columns=headers)
             for group_name, (group_members, matrix) in matrix_groupings:
                 print("With group: " + group_name)
                 print("With elements: " + str(group_members))
                 for i in range(1, 5):
-                    top_10 = []
-                    print("Items in: counter_" + str(i) + ": " + str(len(matrix["counter_" + str(i)])))
-                    for elem in matrix["counter_" + str(i)].most_common(10000):
-                        words = Text(elem[0]).tag("analysis").words
-                        if filter_function(words):
-                            top_10.append(elem)
-                            if len(top_10) == 10:
-                                break
-                    add = dict()
-                    for x in range(10):
+                    top_10 = self.get_top_10_words(filter_function, i, matrix)
+
+                    for j, (item, repetitions) in enumerate(top_10):
+                        add = dict()
+                        add["rank"] = j
+                        add["item"] = item
+                        add["repetitions"] = repetitions
+                        add["group"] = group_name
+                        add["group_members"] = ",".join(group_members)
+                        add["total_words"] = matrix["total_words"]
+                        add["in_a_row"] = i
+
+                        for status in ["only", "mostly"]:
+                            for emotion in ["negative", "neutral", "mixed", "positive"]:
+                                key = "valence_" + status + "_" + emotion
+                                add[key] = matrix[key]
+
                         try:
-                            add["count_" + str(x)] = [top_10[x][0]]
-                            add["repetitions_" + str(x)] = [top_10[x][1]]
-                        except Exception:
-                            pass  # Empty field
-
-                    add["group"] = group_name
-                    add["group_members"] = str(group_members)
-                    add["total_words"] = matrix["total_words"]
-                    add["in_a_row"] = i
-                    
-                    for status in ["only", "mostly"]:
-                        for emotion in ["negative", "neutral", "mixed", "positive"]:
-                            key = "valence_" + status + "_" + emotion
-                            add[key] = matrix[key]
-
-                    try:
-                        count_table = count_table.append(pd.DataFrame(add, index=[0]), ignore_index=True, sort=False)
-                    except Exception as e:
-                        pass  # Empty row
+                            count_table = count_table.append(pd.DataFrame(add, index=[0]), ignore_index=True, sort=False)
+                        except Exception as e:
+                            pass  # Empty row
             datasets.append(count_table.sort_values(by='group'))
 
         return datasets
 
+    @staticmethod
+    def get_top_10_words(filter_function, i, matrix):
+        top_10 = []
+        print("Items in: counter_" + str(i) + ": " + str(len(matrix["counter_" + str(i)])))
+        for elem in matrix["counter_" + str(i)].most_common(10000):
+            words = Text(elem[0]).tag("analysis").words
+            if filter_function(words):
+                top_10.append(elem)
+                if len(top_10) == 10:
+                    break
+        return top_10
+
     def combine(self, first, second):
         combined = dict()
-        
+
         for i in range(1, 5):
             combined["counter_" + str(i)] = first["counter_" + str(i)] + second["counter_" + str(i)]
         combined["total_words"] = first["total_words"] + second["total_words"]
-        
+
         for status in ["only", "mostly"]:
             for emotion in ["negative", "neutral", "mixed", "positive"]:
                 key = "valence_" + status + "_" + emotion
                 combined[key] = first[key] + second[key]
-        
+
         return combined
 
     def get_empty(self):
@@ -125,7 +135,7 @@ class CountConfiguration(Configuration, ABC):
                     layer[key][" ".join(q)] += 1
 
         layer["total_words"] += new_words
-        emotion = message["valence"].replace(" ", "_")
+        emotion = message["valence"].replace(" ", "_").lower()
         if emotion:
             layer["valence_" + emotion] += new_words
 

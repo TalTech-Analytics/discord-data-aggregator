@@ -11,8 +11,7 @@ class TextRankAnalyzer:
         return len(word["analysis"][0]['lemma']) >= 4 and set(word["analysis"][0]['partofspeech']) & {'A', 'S', 'Y'}
 
     def analyze(self, df_with_text):
-        headers = ["group", "group_members", "summary"]
-        headers += ["keyword_" + str(i) for i in range(20)]
+        headers = ["group", "group_members", "summary", "keywords"]
         textrank_table = pd.DataFrame(columns=headers)
 
         for index, row in df_with_text.iterrows():
@@ -40,10 +39,6 @@ class TextRankAnalyzer:
         try:
             extracted_keywords = keywords(context_text, words=20, language='finnish', split=True)
         except Exception:
-            extracted_keywords = ["" for _ in range(20)]
+            extracted_keywords = []
 
-        for i in range(20):
-            try:
-                add["keyword_" + str(i)] = extracted_keywords[i]
-            except Exception:
-                add["keyword_" + str(i)] = ""
+        add["keywords"] = ",".join(extracted_keywords)
